@@ -4,7 +4,7 @@ import { createPlatformIO } from '@gltf-transform/test-utils';
 
 const { FLOAT, UNSIGNED_BYTE, UNSIGNED_SHORT, UNSIGNED_INT, BYTE, SHORT } = Accessor.ComponentType;
 
-test('@gltf-transform/core::accessor | getScalar/setScalar', (t) => {
+test('getScalar/setScalar', (t) => {
 	const accessor = new Document()
 		.createAccessor()
 		.setArray(new Float32Array([1, 2, 3, 4, 6]))
@@ -15,7 +15,7 @@ test('@gltf-transform/core::accessor | getScalar/setScalar', (t) => {
 	t.is(accessor.getScalar(2), 500, 'getScalar');
 });
 
-test('@gltf-transform/core::accessor | getElement/setElement', (t) => {
+test('getElement/setElement', (t) => {
 	const accessor = new Document()
 		.createAccessor()
 		.setArray(new Float32Array([1, 2, 3, 4, 6, 7]))
@@ -26,7 +26,7 @@ test('@gltf-transform/core::accessor | getElement/setElement', (t) => {
 	t.deepEqual(accessor.getElement(2, []), [300, 400], 'getElement');
 });
 
-test('@gltf-transform/core::accessor | normalized', (t) => {
+test('normalized', (t) => {
 	const accessor = new Document()
 		.createAccessor()
 		.setArray(new Uint8Array([128, 255]))
@@ -39,7 +39,7 @@ test('@gltf-transform/core::accessor | normalized', (t) => {
 	t.deepEqual(accessor.getMaxNormalized([])[0].toFixed(2), '1.00', 'getMaxNormalized'); // TODO: loose?
 });
 
-test('@gltf-transform/core::accessor | getComponentType', (t) => {
+test('getComponentType', (t) => {
 	const accessor = new Document().createAccessor();
 
 	t.is(accessor.setArray(new Float32Array()).getComponentType(), FLOAT, 'float');
@@ -55,7 +55,7 @@ test('@gltf-transform/core::accessor | getComponentType', (t) => {
 	);
 });
 
-test('@gltf-transform/core::accessor | getComponentSize', (t) => {
+test('getComponentSize', (t) => {
 	const accessor = new Document().createAccessor();
 
 	t.is(accessor.setArray(new Float32Array()).getComponentSize(), Float32Array.BYTES_PER_ELEMENT, 'float');
@@ -71,7 +71,7 @@ test('@gltf-transform/core::accessor | getComponentSize', (t) => {
 	);
 });
 
-test('@gltf-transform/core::accessor | getElementSize', (t) => {
+test('getElementSize', (t) => {
 	const accessor = new Document().createAccessor();
 
 	t.is(accessor.setType('SCALAR').getElementSize(), 1, 'scalar');
@@ -83,7 +83,7 @@ test('@gltf-transform/core::accessor | getElementSize', (t) => {
 	t.throws(() => accessor.setType('VEC5' as GLTF.AccessorType).getElementSize(), undefined, 'vec5 (throws)');
 });
 
-test('@gltf-transform/core::accessor | interleaved', async (t) => {
+test('interleaved', async (t) => {
 	const resources = {
 		'test.bin': new Uint8Array(
 			new Uint16Array([
@@ -154,8 +154,8 @@ test('@gltf-transform/core::accessor | interleaved', async (t) => {
 	};
 
 	const io = await createPlatformIO();
-	const doc = await io.readJSON({ json, resources });
-	const arrays = doc
+	const document = await io.readJSON({ json, resources });
+	const arrays = document
 		.getRoot()
 		.listAccessors()
 		.map((accessor) => accessor.getArray());
@@ -165,7 +165,7 @@ test('@gltf-transform/core::accessor | interleaved', async (t) => {
 	t.deepEqual(arrays[2], new Uint16Array([100, 200, 400, 500]), 'accessor 3, vec2');
 });
 
-test('@gltf-transform/core::accessor | read sparse', async (t) => {
+test('read sparse', async (t) => {
 	const resources = {
 		'indices.bin': new Uint8Array(new Uint16Array([10, 50, 51]).buffer),
 		'values.bin': new Uint8Array(new Float32Array([1, 2, 3, 10, 12, 14, 25, 50, 75]).buffer),
@@ -213,8 +213,8 @@ test('@gltf-transform/core::accessor | read sparse', async (t) => {
 	};
 
 	const io = await createPlatformIO();
-	const doc = await io.readJSON({ json, resources });
-	const accessors = doc.getRoot().listAccessors();
+	const document = await io.readJSON({ json, resources });
+	const accessors = document.getRoot().listAccessors();
 
 	const actual = [];
 	t.is(accessors.length, 1, 'found one sparse accessor');
@@ -225,7 +225,7 @@ test('@gltf-transform/core::accessor | read sparse', async (t) => {
 	t.deepEqual(accessors[0].getElement(52, actual) && actual, [0, 0, 0], 'empty index 2');
 });
 
-test('@gltf-transform/core::accessor | write sparse', async (t) => {
+test('write sparse', async (t) => {
 	const document = new Document();
 	const buffer = document.createBuffer();
 	const emptyArray = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -270,9 +270,9 @@ test('@gltf-transform/core::accessor | write sparse', async (t) => {
 	t.deepEqual(Array.from(rtSparseAccessor.getArray()), sparseArray, 'emptyAccessor.array (round trip)');
 });
 
-test('@gltf-transform/core::accessor | minmax', (t) => {
-	const doc = new Document();
-	const accessor = doc
+test('minmax', (t) => {
+	const document = new Document();
+	const accessor = document
 		.createAccessor()
 		.setArray(new Float32Array([0, 0, 0, Infinity, NaN, -Infinity, 1, 0, -1, 0, 0, -3]))
 		.setType(Accessor.Type.VEC3);
@@ -281,16 +281,17 @@ test('@gltf-transform/core::accessor | minmax', (t) => {
 	t.deepEqual(accessor.getMax([]), [1, 0, 0], 'computes max, ignoring infinite and NaN');
 });
 
-test('@gltf-transform/core::accessor | extras', async (t) => {
+test('extras', async (t) => {
 	const io = await createPlatformIO();
-	const doc = new Document();
-	doc.createAccessor('A')
+	const document = new Document();
+	document
+		.createAccessor('A')
 		.setArray(new Uint8Array([1, 2, 3]))
 		.setExtras({ foo: 1, bar: 2 })
-		.setBuffer(doc.createBuffer());
+		.setBuffer(document.createBuffer());
 
-	const doc2 = await io.readBinary(await io.writeBinary(doc));
+	const doc2 = await io.readBinary(await io.writeBinary(document));
 
-	t.deepEqual(doc.getRoot().listAccessors()[0].getExtras(), { foo: 1, bar: 2 }, 'storage');
+	t.deepEqual(document.getRoot().listAccessors()[0].getExtras(), { foo: 1, bar: 2 }, 'storage');
 	t.deepEqual(doc2.getRoot().listAccessors()[0].getExtras(), { foo: 1, bar: 2 }, 'roundtrip');
 });

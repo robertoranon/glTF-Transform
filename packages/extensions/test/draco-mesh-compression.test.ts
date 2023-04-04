@@ -9,10 +9,10 @@ const LOGGER = new Logger(Logger.Verbosity.SILENT);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-test('@gltf-transform/extensions::draco-mesh-compression | decoding', async (t) => {
+test('decoding', async (t) => {
 	const io = await createDecoderIO();
-	const doc = await io.read(path.join(__dirname, 'in', 'BoxDraco.gltf'));
-	const bbox = getBounds(doc.getRoot().listScenes()[0]);
+	const document = await io.read(path.join(__dirname, 'in', 'BoxDraco.gltf'));
+	const bbox = getBounds(document.getRoot().listScenes()[0]);
 	t.deepEqual(
 		bbox.min.map((v) => +v.toFixed(3)),
 		[-0.5, -0.5, -0.5],
@@ -25,28 +25,28 @@ test('@gltf-transform/extensions::draco-mesh-compression | decoding', async (t) 
 	);
 });
 
-test('@gltf-transform/extensions::draco-mesh-compression | encoding complete', async (t) => {
+test('encoding complete', async (t) => {
 	// Cases:
 	// (1) Entire primitive reused (share compressed buffer views).
 	// (2) All primitive accessors reused (share compressed buffer views).
 
-	const doc = new Document().setLogger(LOGGER);
-	doc.createExtension(KHRDracoMeshCompression).setRequired(true);
+	const document = new Document().setLogger(LOGGER);
+	document.createExtension(KHRDracoMeshCompression).setRequired(true);
 
-	const buffer = doc.createBuffer();
-	const prim1 = createMeshPrimitive(doc, buffer);
-	const prim2 = createMeshPrimitive(doc, buffer);
+	const buffer = document.createBuffer();
+	const prim1 = createMeshPrimitive(document, buffer);
+	const prim2 = createMeshPrimitive(document, buffer);
 
-	const mesh = doc
+	const mesh = document
 		.createMesh()
 		.addPrimitive(prim1)
 		.addPrimitive(prim1) // x2
 		.addPrimitive(prim2)
 		.addPrimitive(prim2.clone());
-	doc.createNode().setMesh(mesh);
+	document.createNode().setMesh(mesh);
 
 	let io = await createEncoderIO();
-	const jsonDoc = await io.writeJSON(doc, { format: Format.GLB });
+	const jsonDoc = await io.writeJSON(document, { format: Format.GLB });
 	const primitiveDefs = jsonDoc.json.meshes[0].primitives;
 
 	t.is(primitiveDefs.length, mesh.listPrimitives().length, 'writes all primitives');
@@ -128,25 +128,25 @@ test('@gltf-transform/extensions::draco-mesh-compression | encoding complete', a
 	);
 });
 
-test('@gltf-transform/extensions::draco-mesh-compression | encoding skipped', async (t) => {
+test('encoding skipped', async (t) => {
 	// Cases:
 	// (1) Non-indexed.
 	// (2) Non-TRIANGLES.
 
-	const doc = new Document().setLogger(LOGGER);
-	doc.createExtension(KHRDracoMeshCompression).setRequired(true);
+	const document = new Document().setLogger(LOGGER);
+	document.createExtension(KHRDracoMeshCompression).setRequired(true);
 
-	const buffer = doc.createBuffer();
-	const prim1 = createMeshPrimitive(doc, buffer);
-	const prim2 = createMeshPrimitive(doc, buffer);
+	const buffer = document.createBuffer();
+	const prim1 = createMeshPrimitive(document, buffer);
+	const prim2 = createMeshPrimitive(document, buffer);
 
 	prim1.getIndices().dispose();
 	prim2.setMode(Primitive.Mode.TRIANGLE_FAN);
 
-	const mesh = doc.createMesh().addPrimitive(prim1).addPrimitive(prim2);
+	const mesh = document.createMesh().addPrimitive(prim1).addPrimitive(prim2);
 
 	const io = await createEncoderIO();
-	const jsonDoc = await io.writeJSON(doc, { format: Format.GLB });
+	const jsonDoc = await io.writeJSON(document, { format: Format.GLB });
 	const primitiveDefs = jsonDoc.json.meshes[0].primitives;
 
 	t.is(primitiveDefs.length, mesh.listPrimitives().length, 'writes all primitives');
@@ -170,20 +170,20 @@ test('@gltf-transform/extensions::draco-mesh-compression | encoding skipped', as
 	t.falsy(jsonDoc.json.extensionsUsed, 'omitted from extensionsUsed');
 });
 
-test('@gltf-transform/extensions::draco-mesh-compression | encoding sparse', async (t) => {
-	const doc = new Document().setLogger(LOGGER);
-	doc.createExtension(KHRDracoMeshCompression).setRequired(true);
+test('encoding sparse', async (t) => {
+	const document = new Document().setLogger(LOGGER);
+	document.createExtension(KHRDracoMeshCompression).setRequired(true);
 
-	const buffer = doc.createBuffer();
-	const sparseAccessor = doc
+	const buffer = document.createBuffer();
+	const sparseAccessor = document
 		.createAccessor()
 		.setArray(new Uint32Array([0, 0, 0, 0, 25, 0]))
 		.setSparse(true);
-	const prim = createMeshPrimitive(doc, buffer).setAttribute('_SPARSE', sparseAccessor);
-	const mesh = doc.createMesh().addPrimitive(prim);
+	const prim = createMeshPrimitive(document, buffer).setAttribute('_SPARSE', sparseAccessor);
+	const mesh = document.createMesh().addPrimitive(prim);
 
 	const io = await createEncoderIO();
-	const jsonDoc = await io.writeJSON(doc, { format: Format.GLB });
+	const jsonDoc = await io.writeJSON(document, { format: Format.GLB });
 	const primitiveDefs = jsonDoc.json.meshes[0].primitives;
 	const accessorDefs = jsonDoc.json.accessors;
 
@@ -209,25 +209,25 @@ test('@gltf-transform/extensions::draco-mesh-compression | encoding sparse', asy
 	t.is(accessorDefs[2].sparse.count, 1, '_SPARSE sparse');
 });
 
-test('@gltf-transform/extensions::draco-mesh-compression | mixed indices', async (t) => {
-	const doc = new Document().setLogger(LOGGER);
-	doc.createExtension(KHRDracoMeshCompression).setRequired(true);
+test('mixed indices', async (t) => {
+	const document = new Document().setLogger(LOGGER);
+	document.createExtension(KHRDracoMeshCompression).setRequired(true);
 
-	const buffer = doc.createBuffer();
-	const prim1 = createMeshPrimitive(doc, buffer);
+	const buffer = document.createBuffer();
+	const prim1 = createMeshPrimitive(document, buffer);
 	const prim2 = prim1.clone();
 
 	prim2.setIndices(
-		doc
+		document
 			.createAccessor()
 			.setArray(new Uint32Array([0, 1, 2, 3, 4, 5]))
 			.setBuffer(buffer)
 	);
 
-	doc.createMesh().addPrimitive(prim1).addPrimitive(prim2);
+	document.createMesh().addPrimitive(prim1).addPrimitive(prim2);
 
 	const io = await createEncoderIO();
-	const jsonDoc = await io.writeJSON(doc, { format: Format.GLB });
+	const jsonDoc = await io.writeJSON(document, { format: Format.GLB });
 	const primitiveDefs = jsonDoc.json.meshes[0].primitives;
 
 	// The two primitives have different indices, and must be encoded as entirely separate buffer
@@ -264,17 +264,17 @@ test('@gltf-transform/extensions::draco-mesh-compression | mixed indices', async
 	);
 });
 
-test('@gltf-transform/extensions::draco-mesh-compression | mixed attributes', async (t) => {
-	const doc = new Document().setLogger(LOGGER);
-	doc.createExtension(KHRDracoMeshCompression).setRequired(true);
+test('mixed attributes', async (t) => {
+	const document = new Document().setLogger(LOGGER);
+	document.createExtension(KHRDracoMeshCompression).setRequired(true);
 
-	const buffer = doc.createBuffer();
-	const prim1 = createMeshPrimitive(doc, buffer);
+	const buffer = document.createBuffer();
+	const prim1 = createMeshPrimitive(document, buffer);
 	const prim2 = prim1.clone();
 
 	prim2.setAttribute(
 		'COLOR_0',
-		doc
+		document
 			.createAccessor()
 			.setType(Accessor.Type.VEC3)
 			.setArray(
@@ -285,10 +285,10 @@ test('@gltf-transform/extensions::draco-mesh-compression | mixed attributes', as
 			.setBuffer(buffer)
 	);
 
-	doc.createMesh().addPrimitive(prim1).addPrimitive(prim2);
+	document.createMesh().addPrimitive(prim1).addPrimitive(prim2);
 
 	const io = await createEncoderIO();
-	const jsonDoc = await io.writeJSON(doc, { format: Format.GLB });
+	const jsonDoc = await io.writeJSON(document, { format: Format.GLB });
 	const primitiveDefs = jsonDoc.json.meshes[0].primitives;
 
 	// The two primitives have different attributes, and must be encoded as entirely separate
@@ -326,17 +326,17 @@ test('@gltf-transform/extensions::draco-mesh-compression | mixed attributes', as
 	);
 });
 
-test('@gltf-transform/extensions::draco-mesh-compression | non-primitive parent', async (t) => {
-	const doc = new Document().setLogger(LOGGER);
-	doc.createExtension(KHRDracoMeshCompression).setRequired(true);
+test('non-primitive parent', async (t) => {
+	const document = new Document().setLogger(LOGGER);
+	document.createExtension(KHRDracoMeshCompression).setRequired(true);
 
-	const prim = createMeshPrimitive(doc, doc.createBuffer());
-	prim.addTarget(doc.createPrimitiveTarget().setAttribute('POSITION', prim.getAttribute('POSITION')));
-	doc.createMesh().addPrimitive(prim);
+	const prim = createMeshPrimitive(document, document.createBuffer());
+	prim.addTarget(document.createPrimitiveTarget().setAttribute('POSITION', prim.getAttribute('POSITION')));
+	document.createMesh().addPrimitive(prim);
 
 	const io = await createEncoderIO();
 	await t.throwsAsync(
-		() => io.writeJSON(doc, { format: Format.GLB }),
+		() => io.writeJSON(document, { format: Format.GLB }),
 		{ message: /indices or vertex attributes/ },
 		'invalid accessor reuse'
 	);

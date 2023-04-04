@@ -9,7 +9,7 @@ const LOGGER = new Logger(Logger.Verbosity.SILENT);
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-test('@gltf-transform/functions::weld | tolerance=0', async (t) => {
+test('tolerance=0', async (t) => {
 	const doc = new Document().setLogger(LOGGER);
 	const positionArray = new Float32Array([0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, -1]);
 	const position = doc.createAccessor().setType('VEC3').setArray(positionArray);
@@ -30,7 +30,7 @@ test('@gltf-transform/functions::weld | tolerance=0', async (t) => {
 	t.deepEqual(prim2.getAttribute('POSITION').getArray(), positionArray, 'vertices on prim2');
 });
 
-test('@gltf-transform/functions::weld | tolerance>0', async (t) => {
+test('tolerance>0', async (t) => {
 	const doc = new Document().setLogger(LOGGER);
 	// prettier-ignore
 	const positionArray = new Float32Array([
@@ -77,42 +77,42 @@ test('@gltf-transform/functions::weld | tolerance>0', async (t) => {
 	t.is(doc.getRoot().listAccessors().length, 3, 'accessor count');
 });
 
-test('@gltf-transform/functions::weld | attributes', async (t) => {
+test('attributes', async (t) => {
 	const doc = new Document().setLogger(LOGGER);
 	// prettier-ignore
 	const positionArray = new Uint8Array([
-		0, 0, 0, // ⎡
-		0, 0, 0, // ⎢ all match, weld 3
-		0, 0, 0, // ⎣
-		1, 0, 0, // ⎡
-		1, 0, 0, // ⎢ normals differ, weld 2
-		1, 0, 0, // ⎣ ❌
-		0, 1, 1, // ⎡ ❌
-		0, 1, 1, // ⎢ colors differ, weld 2
-		0, 1, 1, // ⎣
+		0, 0, 0, // A: All A's match, weld 3
+		1, 0, 0, // B: Normals differ, weld 2 B's
+		0, 1, 1, // C: ❌ Colors differ, weld 2 C's
+		0, 0, 0, // A:
+		1, 0, 0, // B:
+		0, 1, 1, // C:
+		0, 0, 0, // A:
+		1, 0, 0, // B: ❌
+		0, 1, 1, // C:
 	]);
 	// prettier-ignore
 	const normalArray = new Int8Array([
 		63, 63, 0,
-		63, 63, 0,
-		63, 63, 0,
 		0, 63, 64,
+		63, 0, 63,
+		63, 63, 0,
 		0, 62, 63,
+		63, 0, 63,
+		63, 63, 0,
 		0, -63, 63, // ❌
-		63, 0, 63,
-		63, 0, 63,
 		63, 0, 63,
 	]);
 	// prettier-ignore
 	const colorArray = new Uint8Array([
 		255, 0, 0, 1,
-		255, 0, 0, 1,
-		255, 0, 0, 1,
-		0, 255, 0, 1,
-		0, 255, 0, 1,
 		0, 255, 0, 1,
 		0, 0, 200, 1, // ❌
+		255, 0, 0, 1,
+		0, 255, 0, 1,
 		0, 0, 255, 1,
+		255, 0, 0, 1,
+		0, 255, 0, 1,
 		0, 0, 255, 1,
 	]);
 	const position = doc.createAccessor().setType('VEC3').setArray(positionArray);
@@ -128,25 +128,27 @@ test('@gltf-transform/functions::weld | attributes', async (t) => {
 
 	await doc.transform(weld({ tolerance: 0.0001 }));
 
+	t.false(prim.isDisposed(), 'prim is not disposed');
 	// prettier-ignore
 	t.deepEqual(
 		Array.from(prim.getIndices()!.getArray()!),
 		[
-			0, 0, 0,
-			3, 3, 4,
-			1, 2, 2,
+			0, 1, 2,
+			0, 1, 3,
+			0, 4, 3
 		],
 		'indices'
 	);
+
 	// prettier-ignore
 	t.deepEqual(
 		Array.from(prim.getAttribute('POSITION')!.getArray()!),
 		[
 			0, 0, 0,
+			1, 0, 0,
 			0, 1, 1,
 			0, 1, 1,
-			1, 0, 0,
-			1, 0, 0,
+			1, 0, 0
 		],
 		'position'
 	);
@@ -155,10 +157,10 @@ test('@gltf-transform/functions::weld | attributes', async (t) => {
 		Array.from(prim.getAttribute('NORMAL')!.getArray()!),
 		[
 			63, 63, 0,
-			63, 0, 63,
-			63, 0, 63,
 			0, 63, 64,
-			0, -63, 63,
+			63, 0, 63,
+			63, 0, 63,
+			0, -63, 63
 		],
 		'normal'
 	);
@@ -167,16 +169,16 @@ test('@gltf-transform/functions::weld | attributes', async (t) => {
 		Array.from(prim.getAttribute('COLOR_0')!.getArray()!),
 		[
 			255, 0, 0, 1,
+			0, 255, 0, 1,
 			0, 0, 200, 1,
 			0, 0, 255, 1,
-			0, 255, 0, 1,
-			0, 255, 0, 1,
+			0, 255, 0, 1
 		],
 		'color'
 	);
 });
 
-test('@gltf-transform/functions::weld | u16 vs u32', async (t) => {
+test('u16 vs u32', async (t) => {
 	const doc = new Document().setLogger(LOGGER);
 	const smArray = new Float32Array(65534 * 3);
 	const lgArray = new Float32Array(65535 * 3);
@@ -193,7 +195,7 @@ test('@gltf-transform/functions::weld | u16 vs u32', async (t) => {
 	t.is(lgPrim.getIndices().getArray().constructor, Uint32Array, 'u32 > 65534');
 });
 
-test('@gltf-transform/functions::weld | modes', async (t) => {
+test('modes', async (t) => {
 	// Extracted primitive data from (unindexed) 01–06 samples:
 	// https://github.com/KhronosGroup/glTF-Asset-Generator/tree/master/Output/Positive/Mesh_PrimitiveMode
 	const datasetPath = path.resolve(__dirname, 'in/Mesh_PrimitiveMode_01_to_06.json');
@@ -219,7 +221,7 @@ test('@gltf-transform/functions::weld | modes', async (t) => {
 	}
 });
 
-test('@gltf-transform/functions::weld | targets', async (t) => {
+test('targets', async (t) => {
 	const document = new Document().setLogger(LOGGER);
 	// prettier-ignore
 	const positionArray = new Float32Array([
@@ -267,4 +269,35 @@ test('@gltf-transform/functions::weld | targets', async (t) => {
 		'target positions'
 	);
 	t.is(document.getRoot().listAccessors().length, 3, 'accessor count');
+});
+
+test('degenerate', async (t) => {
+	const doc = new Document().setLogger(LOGGER);
+	// prettier-ignore
+	const positionArray = new Float32Array([
+		0, 0, 0,
+		0, 0, 1,
+		0, 0, -1,
+		0, 0, 0,
+		0, 0, 0.00000001,
+		0, 0, -0.00000001,
+	]);
+	const position = doc.createAccessor().setType('VEC3').setArray(positionArray);
+	const prim = doc.createPrimitive().setAttribute('POSITION', position).setMode(Primitive.Mode.TRIANGLES);
+
+	doc.createMesh().addPrimitive(prim);
+
+	await doc.transform(weld({ tolerance: 0.00001, exhaustive: false }));
+
+	t.deepEqual(prim.getIndices().getArray(), new Uint16Array([0, 1, 2]), 'indices on prim');
+	t.deepEqual(
+		Array.from(prim.getAttribute('POSITION').getArray()),
+		// prettier-ignore
+		[
+			0, 0, 0,
+			0, 0, 1,
+			0, 0, -1
+		],
+		'vertices on prim'
+	);
 });

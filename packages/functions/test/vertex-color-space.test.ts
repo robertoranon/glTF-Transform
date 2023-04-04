@@ -1,8 +1,8 @@
 import test from 'ava';
 import { Accessor, Document } from '@gltf-transform/core';
-import { colorspace } from '@gltf-transform/functions';
+import { vertexColorSpace } from '@gltf-transform/functions';
 
-test('@gltf-transform/functions::colorspace', (t) => {
+test('basic', (t) => {
 	const input = [0.25882352941176473, 0.5215686274509804, 0.9568627450980393]; // sRGB
 	const expected = [0.054480276435339814, 0.23455058215026167, 0.9046611743890203]; // linear
 
@@ -22,7 +22,7 @@ test('@gltf-transform/functions::colorspace', (t) => {
 	primitive1.setAttribute('COLOR_0', accessor1).setAttribute('COLOR_1', accessor2);
 	primitive2.setAttribute('COLOR_0', accessor1);
 
-	colorspace({ inputEncoding: 'sRGB' })(doc);
+	vertexColorSpace({ inputColorSpace: 'srgb' })(doc);
 
 	let actual;
 

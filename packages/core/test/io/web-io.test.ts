@@ -17,7 +17,7 @@ function mockFetch(response: unknown): string[] {
 	return paths;
 }
 
-test.serial('@gltf-transform/core::io | web read glb', async (t) => {
+test.serial('read glb', async (t) => {
 	mockWindow('https://www.example.com/test');
 	mockFetch({
 		arrayBuffer: () => BufferUtils.createBufferFromDataURI(SAMPLE_GLB),
@@ -36,7 +36,7 @@ test.serial('@gltf-transform/core::io | web read glb', async (t) => {
 	t.is(document.getRoot().listBuffers().length, 1, 'reads a GLB with Fetch API');
 });
 
-test.serial('@gltf-transform/core::io | web read glb + resources', async (t) => {
+test.serial('read glb + resources', async (t) => {
 	const json = {
 		asset: { version: '2.0' },
 		scenes: [{ name: 'Default Scene' }],
@@ -98,7 +98,7 @@ test.serial('@gltf-transform/core::io | web read glb + resources', async (t) => 
 	t.is(document.getRoot().listScenes().length, 1, 'reads GLB + resources with Fetch API');
 });
 
-test.serial('@gltf-transform/core::io | web read gltf', async (t) => {
+test.serial('read gltf', async (t) => {
 	const images = [new Uint8Array(4), new Uint8Array(3), new Uint8Array(2), new Uint8Array(1)];
 
 	mockWindow('https://www.example.com/test');
@@ -135,7 +135,7 @@ test.serial('@gltf-transform/core::io | web read gltf', async (t) => {
 	t.is(document.getRoot().listScenes().length, 1, 'reads a glTF with Fetch API');
 });
 
-test.serial('@gltf-transform/core::io | web read + data URIs', async (t) => {
+test.serial('read + data URIs', async (t) => {
 	const images = [new Uint8Array(3), new Uint8Array(2), new Uint8Array(1)];
 	const uris = images.map((image) => {
 		return 'data:image/png;base64,' + Buffer.from(image).toString('base64');
@@ -155,8 +155,8 @@ test.serial('@gltf-transform/core::io | web read + data URIs', async (t) => {
 
 	const io = new WebIO();
 
-	const doc = await io.read('test.gltf');
-	const textures = doc.getRoot().listTextures();
+	const document = await io.read('test.gltf');
+	const textures = document.getRoot().listTextures();
 
 	t.deepEqual(fetchedPaths, ['test.gltf'], 'one network request');
 	t.is(textures.length, 3, 'reads a textures from Data URIs');
@@ -165,7 +165,7 @@ test.serial('@gltf-transform/core::io | web read + data URIs', async (t) => {
 	t.deepEqual(Array.from(textures[2].getImage()), Array.from(images[2]), 'reads texture 2');
 });
 
-test.serial('@gltf-transform/core::io | web readJSON + data URIs', async (t) => {
+test.serial('readJSON + data URIs', async (t) => {
 	const images = [new Uint8Array(3), new Uint8Array(2), new Uint8Array(1)];
 	const uris = images.map((image) => {
 		return 'data:image/png;base64,' + Buffer.from(image).toString('base64');
@@ -186,14 +186,14 @@ test.serial('@gltf-transform/core::io | web readJSON + data URIs', async (t) => 
 
 	const io = new WebIO();
 
-	const doc = await io.readJSON({
+	const document = await io.readJSON({
 		json: {
 			asset: { version: '2.0' },
 			images: uris.map((uri) => ({ uri })),
 		},
 		resources: {},
 	});
-	const textures = doc.getRoot().listTextures();
+	const textures = document.getRoot().listTextures();
 
 	t.deepEqual(fetchedPaths, [], 'no network requests');
 	t.is(textures.length, 3, 'reads a textures from Data URIs');

@@ -2,35 +2,39 @@ import test from 'ava';
 import { Accessor, Document } from '@gltf-transform/core';
 import { createPlatformIO } from '@gltf-transform/test-utils';
 
-test('@gltf-transform/core::animation', async (t) => {
-	const doc = new Document();
+test('basic', async (t) => {
+	const document = new Document();
 
-	const buffer = doc.createBuffer('default');
+	const buffer = document.createBuffer('default');
 
-	const ball = doc.createNode('Ball');
+	const ball = document.createNode('Ball');
 
-	const input = doc
+	const input = document
 		.createAccessor('times')
 		.setArray(new Float32Array([0, 1, 2]))
 		.setType(Accessor.Type.SCALAR)
 		.setBuffer(buffer);
 
-	const output = doc
+	const output = document
 		.createAccessor('values')
 		.setArray(new Float32Array([0, 0, 0, 0, 1, 0, 0, 0, 0]))
 		.setType(Accessor.Type.VEC3)
 		.setBuffer(buffer);
 
-	const sampler = doc.createAnimationSampler().setInput(input).setOutput(output).setInterpolation('LINEAR');
+	const sampler = document.createAnimationSampler().setInput(input).setOutput(output).setInterpolation('LINEAR');
 
-	const channel = doc.createAnimationChannel().setTargetNode(ball).setTargetPath('translation').setSampler(sampler);
+	const channel = document
+		.createAnimationChannel()
+		.setTargetNode(ball)
+		.setTargetPath('translation')
+		.setSampler(sampler);
 
-	doc.createAnimation('BallBounce').addChannel(channel).addSampler(sampler);
+	document.createAnimation('BallBounce').addChannel(channel).addSampler(sampler);
 
 	const io = await createPlatformIO();
 
 	const options = { basename: 'animationTest' };
-	const jsonDoc = await io.writeJSON(await io.readJSON(await io.writeJSON(doc, options)), options);
+	const jsonDoc = await io.writeJSON(await io.readJSON(await io.writeJSON(document, options)), options);
 
 	t.deepEqual(
 		jsonDoc.json.animations[0],
@@ -62,40 +66,40 @@ test('@gltf-transform/core::animation', async (t) => {
 	t.deepEqual(finalDoc.getRoot().listAccessors()[1].getArray(), output.getArray(), 'sampler values');
 });
 
-test('@gltf-transform/core::animation | copy', (t) => {
-	const doc = new Document();
-	const a = doc
+test('copy', (t) => {
+	const document = new Document();
+	const a = document
 		.createAnimation('MyAnim')
-		.addChannel(doc.createAnimationChannel())
-		.addSampler(doc.createAnimationSampler());
-	const b = doc.createAnimation().copy(a);
+		.addChannel(document.createAnimationChannel())
+		.addSampler(document.createAnimationSampler());
+	const b = document.createAnimation().copy(a);
 
 	t.is(b.getName(), a.getName(), 'copy name');
 	t.deepEqual(b.listChannels(), a.listChannels(), 'copy channels');
 	t.deepEqual(b.listSamplers(), a.listSamplers(), 'copy samplers');
 });
 
-test('@gltf-transform/core::animationChannel | copy', (t) => {
-	const doc = new Document();
-	const a = doc
+test('copy channel', (t) => {
+	const document = new Document();
+	const a = document
 		.createAnimationChannel('MyChannel')
-		.setTargetNode(doc.createNode())
-		.setSampler(doc.createAnimationSampler());
-	const b = doc.createAnimationChannel().copy(a);
+		.setTargetNode(document.createNode())
+		.setSampler(document.createAnimationSampler());
+	const b = document.createAnimationChannel().copy(a);
 
 	t.is(b.getName(), a.getName(), 'copy name');
 	t.is(b.getTargetNode(), a.getTargetNode(), 'copy targetNode');
 	t.is(b.getSampler(), a.getSampler(), 'copy sampler');
 });
 
-test('@gltf-transform/core::animationSampler | copy', (t) => {
-	const doc = new Document();
-	const a = doc
+test('copy sampler', (t) => {
+	const document = new Document();
+	const a = document
 		.createAnimationSampler('MySampler')
 		.setInterpolation('STEP')
-		.setInput(doc.createAccessor())
-		.setOutput(doc.createAccessor());
-	const b = doc.createAnimationSampler().copy(a);
+		.setInput(document.createAccessor())
+		.setOutput(document.createAccessor());
+	const b = document.createAnimationSampler().copy(a);
 
 	t.is(b.getName(), a.getName(), 'copy name');
 	t.is(b.getInterpolation(), a.getInterpolation(), 'copy interpolation');
@@ -103,18 +107,19 @@ test('@gltf-transform/core::animationSampler | copy', (t) => {
 	t.is(b.getOutput(), a.getOutput(), 'copy output');
 });
 
-test('@gltf-transform/core::animation | extras', async (t) => {
+test('extras', async (t) => {
 	const io = await createPlatformIO();
-	const doc = new Document();
-	doc.createAnimation('A')
+	const document = new Document();
+	document
+		.createAnimation('A')
 		.setExtras({ foo: 1, bar: 2 })
-		.addChannel(doc.createAnimationChannel().setExtras({ channel: true }))
-		.addSampler(doc.createAnimationSampler().setExtras({ sampler: true }));
+		.addChannel(document.createAnimationChannel().setExtras({ channel: true }))
+		.addSampler(document.createAnimationSampler().setExtras({ sampler: true }));
 
-	const doc2 = await io.readJSON(await io.writeJSON(doc, { basename: 'test' }));
+	const document2 = await io.readJSON(await io.writeJSON(document, { basename: 'test' }));
 
-	const anim = doc.getRoot().listAnimations()[0];
-	const anim2 = doc2.getRoot().listAnimations()[0];
+	const anim = document.getRoot().listAnimations()[0];
+	const anim2 = document2.getRoot().listAnimations()[0];
 
 	t.deepEqual(anim.getExtras(), { foo: 1, bar: 2 }, 'stores extras');
 	t.deepEqual(anim2.getExtras(), { foo: 1, bar: 2 }, 'roundtrips extras');
